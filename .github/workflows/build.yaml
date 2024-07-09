@@ -1,0 +1,69 @@
+name: Generate Bookmarklet, Update Index HTML, Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  update_html:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run bookmarkify.py
+        run: |
+          python bookmarkify.py github-pr-search-helper.js
+
+      - name: Check if there are any changes
+        id: verify_diff
+        run: |
+          git diff --quiet . || echo "changed=true" >> $GITHUB_OUTPUT
+
+      - name: Commit & Push
+        id: commit_and_push
+        if: steps.verify_diff.outputs.changed == 'true'
+        run: |
+          git config --local user.email "actions@github.com"
+          git config --local user.name "Github Actions Bot"
+          git add .
+          git commit -m "[Workflow] Updated bookmarklet in index.html"
+          git push https://${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} HEAD:${{ github.ref }}
+
+      - name: Setup Pages
+        id: setup_pages
+        uses: actions/configure-pages@v4
+
+      - name: Build with Jekyll
+        id: build_jekyll
+        if: steps.setup_pages.conclusion == 'success'
+        uses: actions/jekyll-build-pages@v1
+        with:
+          source: ./
+          destination: ./_site
+
+      - name: Upload artifact
+        id: upload_artifact
+        if: steps.build_jekyll.conclusion == 'success'
+        uses: actions/upload-pages-artifact@v3
+
+  deploy:
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    runs-on: ubuntu-latest
+    needs: update_html
+    if: needs.update_html.result == 'success'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Deploy to Github Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
