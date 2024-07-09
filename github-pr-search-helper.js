@@ -92,9 +92,9 @@ function main() {
 function createToggleButton() {
   const button = createElement("button", {
     id: ID_TOGGLE_BUTTON,
-    style: css_toggleOn,
+    style: css_toggleOff,
   });
-  button.innerHTML = "Toggle";
+  button.innerHTML = "[ _ ]";
 
   button.onclick = (event) => {
     event.preventDefault();
@@ -102,10 +102,12 @@ function createToggleButton() {
 
     if (searchToolbar.style.visibility === "visible") {
       hideElement(searchToolbar);
-      button.style.cssText = css_toggleOff;
+      button.style.cssText = css_toggleOn;
+      button.innerHTML = "[ + ]";
     } else {
       showElement(searchToolbar);
-      button.style.cssText = css_toggleOn;
+      button.style.cssText = css_toggleOff;
+      button.innerHTML = "[ _ ]";
       getUsernameSearchInput().focus();
     }
   };
@@ -118,19 +120,29 @@ function createToggleButton() {
 
   button.onmouseleave = () => {
     const versionTooltip = getVersionTooltip();
-    versionTooltip.style.transitionDelay = "0s";
-    hideElement(getVersionTooltip());
+    versionTooltip.style.transitionDelay = "0.5s";
+    hideElement(versionTooltip);
   };
 
   return button;
 }
 
 function createVersionTooltip() {
-  const tooltip = createElement("div", {
+  const GITHUB_PAGES_URL =
+    "https://derekchowasana.github.io/github-pr-search-helper/";
+  const tooltip = createElement("a", {
     id: ID_VERSION_TOOLTIP,
     style: css_versionTooltip,
+    href: GITHUB_PAGES_URL,
   });
   tooltip.innerHTML = VERSION;
+
+  tooltip.onmouseover = () => {
+    showElement(getVersionTooltip());
+  };
+  tooltip.onmouseleave = () => {
+    hideElement(getVersionTooltip());
+  };
   return tooltip;
 }
 
@@ -455,7 +467,7 @@ const SELECTED_BG = "#30363e";
 
 const css_toggleBase = `
   position: absolute;
-  left: -54px;
+  left: -46px;
   height: 32px;
   display: flex;
   align-items: center;
@@ -470,13 +482,13 @@ const css_toggleOn = `
 `;
 const css_toggleOff = `
   ${css_toggleBase}
+  color: ${SELECTED_BG};
   background: ${GITHUB_BG};
   border: ${BORDER_STYLE};
 `;
 
 const css_versionTooltip = `
   visibility: hidden;
-  transition-delay: 2s;
   position: absolute;
   top: 64px;
   left: -54px;
